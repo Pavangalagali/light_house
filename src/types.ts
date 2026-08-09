@@ -74,3 +74,19 @@ export interface QuoteRequest {
 }
 
 export type FilterCategory = 'all' | string;
+
+export interface UserProfile {
+  phone: string;
+  name?: string;
+  email?: string;
+  address?: string;
+  verifiedAt: string;
+  wishlistProductIds: string[];
+  recentlyViewedProductIds: string[];
+}
+
+export interface OTPRequestState {
+  phone: string;
+  otpCode: string;
+  expiresAt: number;
+}

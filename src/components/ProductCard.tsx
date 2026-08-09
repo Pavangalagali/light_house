@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lightbulb, Zap, ShoppingBag, Eye, Edit2, Tag, Check, Star } from 'lucide-react';
+import { Lightbulb, Zap, ShoppingBag, Eye, Edit2, Tag, Check, Star, Scale, Heart } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductCardProps {
@@ -9,6 +9,10 @@ interface ProductCardProps {
   isInQuoteCart: boolean;
   isAdminLoggedIn: boolean;
   onEditProduct?: (product: Product) => void;
+  isCompared?: boolean;
+  onToggleCompare?: (product: Product) => void;
+  isWishlisted?: boolean;
+  onToggleWishlist?: (product: Product) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -18,6 +22,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   isInQuoteCart,
   isAdminLoggedIn,
   onEditProduct,
+  isCompared = false,
+  onToggleCompare,
+  isWishlisted = false,
+  onToggleWishlist,
 }) => {
   const hasDiscount = product.discountPrice && product.discountPrice < product.originalPrice;
   const discountPercent = hasDiscount
@@ -56,9 +64,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
+        {/* Wishlist Heart Button */}
+        {onToggleWishlist && (
+          <button
+            onClick={() => onToggleWishlist(product)}
+            className={`absolute top-3 right-3 z-20 p-2 rounded-full backdrop-blur-md border transition-all cursor-pointer ${
+              isWishlisted
+                ? 'bg-rose-600 text-white border-rose-500 shadow-md scale-105'
+                : 'bg-slate-900/60 text-white hover:bg-rose-600 border-white/20'
+            }`}
+            title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-white' : ''}`} />
+          </button>
+        )}
+
         {/* Discount Percentage Badge */}
         {hasDiscount && (
-          <div className="absolute top-3 right-3 z-10">
+          <div className="absolute top-3 right-12 z-10">
             <span className="discount-tag font-extrabold text-[11px] px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
               <Tag className="w-3 h-3" />
               {discountPercent}% OFF
@@ -148,27 +171,44 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
           </div>
 
-          {/* Add to Quote Button */}
-          <button
-            onClick={() => onAddToQuote(product)}
-            className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
-              isInQuoteCart
-                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40'
-                : 'glass-button-primary'
-            }`}
-          >
-            {isInQuoteCart ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Added to Quote List</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-4 h-4" />
-                <span>Add to Quote Request</span>
-              </>
+          {/* Action Buttons: Add to Quote & Compare */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onAddToQuote(product)}
+              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                isInQuoteCart
+                  ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40'
+                  : 'glass-button-primary'
+              }`}
+            >
+              {isInQuoteCart ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Added</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Add to Quote</span>
+                </>
+              )}
+            </button>
+
+            {onToggleCompare && (
+              <button
+                onClick={() => onToggleCompare(product)}
+                className={`p-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1 cursor-pointer ${
+                  isCompared
+                    ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-500'
+                }`}
+                title={isCompared ? 'Remove from Compare' : 'Add to Side-by-Side Compare'}
+              >
+                <Scale className="w-4 h-4" />
+                <span className="hidden sm:inline text-[11px]">{isCompared ? 'Comparing' : 'Compare'}</span>
+              </button>
             )}
-          </button>
+          </div>
 
         </div>
 

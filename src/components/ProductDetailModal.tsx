@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Lightbulb, Zap, ShoppingBag, MessageCircle, MapPin, CheckCircle, Tag, Share2 } from 'lucide-react';
+import { X, Lightbulb, Zap, ShoppingBag, MessageCircle, MapPin, CheckCircle, Tag, Share2, Heart } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductDetailModalProps {
@@ -7,6 +7,8 @@ interface ProductDetailModalProps {
   onClose: () => void;
   onAddToQuote: (product: Product) => void;
   isInQuoteCart: boolean;
+  isWishlisted?: boolean;
+  onToggleWishlist?: (product: Product) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -14,6 +16,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   onAddToQuote,
   isInQuoteCart,
+  isWishlisted = false,
+  onToggleWishlist,
 }) => {
   if (!product) return null;
 
@@ -63,13 +67,29 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         className="glass-panel w-full max-w-3xl rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 relative my-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-100 dark:bg-black/60 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-black transition-all border border-slate-200 dark:border-white/10"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Top Actions: Wishlist & Close Button */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          {onToggleWishlist && (
+            <button
+              onClick={() => onToggleWishlist(product)}
+              className={`p-2 rounded-full border transition-all cursor-pointer ${
+                isWishlisted
+                  ? 'bg-rose-600 text-white border-rose-500 shadow-md'
+                  : 'bg-slate-100 dark:bg-black/60 text-slate-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 border-slate-200 dark:border-white/10'
+              }`}
+              title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            >
+              <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-white' : ''}`} />
+            </button>
+          )}
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full bg-slate-100 dark:bg-black/60 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-black transition-all border border-slate-200 dark:border-white/10 cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2">
           

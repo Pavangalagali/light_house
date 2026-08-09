@@ -68,8 +68,28 @@
     color: var(--text-primary);
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     overflow-x: hidden;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
+}
+
+/* Global Smooth Light/Dark Mode Transition Animation */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 350ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Exclude transform and opacity from universal transition so hover scales remain fast */
+.transform,
+[class*="hover:scale"],
+[class*="group-hover:scale"],
+.animate-fade-in,
+.animate-spin,
+.animate-bounce,
+.animate-pulse {
+  transition-property: transform, opacity, background-color, border-color, color, box-shadow;
 }
 
 /* Glassmorphism Design Utilities */

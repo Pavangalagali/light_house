@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Lightbulb, Zap, Tag, Sparkles, Filter, SlidersHorizontal, 
-  Search, ShieldCheck, ShoppingBag, MapPin, Store, CheckCircle 
+  Search, ShieldCheck, ShoppingBag, MapPin, Store, CheckCircle, Calculator, Scale, X, User 
 } from 'lucide-react';
-import { Product, ProductType, ShopOrigin, QuoteItem } from './types';
+import { Product, ProductType, ShopOrigin, QuoteItem, UserProfile } from './types';
 import { INITIAL_PRODUCTS, LIGHT_CATEGORIES, APPLIANCE_CATEGORIES } from './data/initialData';
+import { getCurrentUser, updateUserWishlist, updateUserHistory } from './services/userService';
 import { Header, ThemeMode } from './components/Header';
 import { HeroBanner } from './components/HeroBanner';
 import { ProductCard } from './components/ProductCard';
@@ -12,6 +13,11 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { AdminPortal } from './components/AdminPortal';
 import { QuoteCartDrawer } from './components/QuoteCartDrawer';
 import { StoreLocationsSection } from './components/StoreLocationsSection';
+import { RoomCalculatorModal } from './components/RoomCalculatorModal';
+import { CompareModal } from './components/CompareModal';
+import { WishlistAndHistoryModal } from './components/WishlistAndHistoryModal';
+import { UserAuthModal } from './components/UserAuthModal';
+import { AccountTab } from './components/AccountTab';
 import { Footer } from './components/Footer';
 
 export default function App() {
@@ -69,11 +75,122 @@ export default function App() {
   const [sortBy, setSortBy] = useState<'featured' | 'price_low' | 'price_high' | 'discount'>('featured');
   
   // Navigation & Modals
-  const [activeTab, setActiveTab] = useState<'catalog' | 'stores'>('catalog');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'stores' | 'account'>('catalog');
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
   const [isQuoteDrawerOpen, setIsQuoteDrawerOpen] = useState<boolean>(false);
   const [isAdminPortalOpen, setIsAdminPortalOpen] = useState<boolean>(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState<boolean>(false);
+  const [isCompareOpen, setIsCompareOpen] = useState<boolean>(false);
+  const [compareProducts, setCompareProducts] = useState<Product[]>([]);
+
+  // User Auth State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // Wishlist & Recently Viewed Per-User Persistent State
+  const [wishlistProducts, setWishlistProducts] = useState<Product[]>([]);
+  const [recentlyViewedProducts, setRecentlyViewedProducts] = useState<Product[]>([]);
+  const [isWishlistModalOpen, setIsWishlistModalOpen] = useState<boolean>(false);
+  const [wishlistModalTab, setWishlistModalTab] = useState<'wishlist' | 'history'>('wishlist');
+
+  // Load user data on startup or user change
+  useEffect(() => {
+    if (currentUser) {
+      const userWishlist = products.filter((p) => currentUser.wishlistProductIds?.includes(p.id));
+      setWishlistProducts(userWishlist);
+
+      const userHistory = (currentUser.recentlyViewedProductIds || [])
+        .map((id) => products.find((p) => p.id === id))
+        .filter((p): p is Product => Boolean(p));
+      setRecentlyViewedProducts(userHistory);
+    }
+  }, [currentUser, products]);
+
+  // Wishlist Handlers
+  const handleToggleWishlist = (product: Product) => {
+    setWishlistProducts((prev) => {
+      const exists = prev.some((p) => p.id === product.id);
+      const updated = exists ? prev.filter((p) => p.id !== product.id) : [product, ...prev];
+      if (currentUser) {
+        updateUserWishlist(currentUser.phone, updated.map((p) => p.id));
+      }
+      return updated;
+    });
+  };
+
+  const handleClearWishlist = () => {
+    setWishlistProducts([]);
+    if (currentUser) {
+      updateUserWishlist(currentUser.phone, []);
+    }
+  };
+
+  // Recently Viewed Handler
+  const handleOpenProductDetail = (product: Product) => {
+    setSelectedProductModal(product);
+    setRecentlyViewedProducts((prev) => {
+      const filtered = prev.filter((p) => p.id !== product.id);
+      const updated = [product, ...filtered].slice(0, 15);
+      if (currentUser) {
+        updateUserHistory(currentUser.phone, updated.map((p) => p.id));
+      }
+      return updated;
+    });
+  };
+
+  const handleClearHistory = () => {
+    setRecentlyViewedProducts([]);
+    if (currentUser) {
+      updateUserHistory(currentUser.phone, []);
+    }
+  };
+
+  const handleUserLogin = (user: UserProfile) => {
+    setCurrentUser(user);
+    const updatedWishlistIds = Array.from(new Set([...(user.wishlistProductIds || []), ...wishlistProducts.map((p) => p.id)]));
+    const updatedHistoryIds = Array.from(new Set([...(user.recentlyViewedProductIds || []), ...recentlyViewedProducts.map((p) => p.id)]));
+    
+    updateUserWishlist(user.phone, updatedWishlistIds);
+    updateUserHistory(user.phone, updatedHistoryIds);
+
+    const fullWishlist = products.filter((p) => updatedWishlistIds.includes(p.id));
+    const fullHistory = updatedHistoryIds
+      .map((id) => products.find((p) => p.id === id))
+      .filter((p): p is Product => Boolean(p));
+
+    setWishlistProducts(fullWishlist);
+    setRecentlyViewedProducts(fullHistory);
+  };
+
+  const handleUserLogout = () => {
+    setCurrentUser(null);
+    setWishlistProducts([]);
+    setRecentlyViewedProducts([]);
+  };
+
+  // Compare Handlers
+  const handleToggleCompare = (product: Product) => {
+    setCompareProducts((prev) => {
+      const exists = prev.some((p) => p.id === product.id);
+      if (exists) {
+        return prev.filter((p) => p.id !== product.id);
+      }
+      if (prev.length >= 4) {
+        alert('You can compare up to 4 products at a time.');
+        return prev;
+      }
+      return [...prev, product];
+    });
+  };
+
+  const handleRemoveFromCompare = (productId: string) => {
+    setCompareProducts((prev) => prev.filter((p) => p.id !== productId));
+  };
+
+  const handleClearCompare = () => {
+    setCompareProducts([]);
+  };
 
   // Cart Handlers
   const handleAddToQuote = (product: Product) => {
@@ -214,22 +331,85 @@ export default function App() {
         setActiveTab={setActiveTab}
         theme={theme}
         onChangeTheme={setTheme}
+        onOpenCalculator={() => setIsCalculatorOpen(true)}
+        compareCount={compareProducts.length}
+        onOpenCompare={() => setIsCompareOpen(true)}
+        wishlistCount={wishlistProducts.length}
+        onOpenWishlist={() => {
+          setWishlistModalTab('wishlist');
+          setIsWishlistModalOpen(true);
+        }}
+        historyCount={recentlyViewedProducts.length}
+        onOpenHistory={() => {
+          setWishlistModalTab('history');
+          setIsWishlistModalOpen(true);
+        }}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       <main className="flex-1">
-        {/* Main Hero Header */}
-        <HeroBanner
-          onSelectShop={(shop) => {
-            setSelectedShop(shop);
-            setSelectedCategory('all');
-            setActiveTab('catalog');
-          }}
-          onOpenAdmin={() => setIsAdminPortalOpen(true)}
-        />
+        {/* Main Hero Header - shown on catalog */}
+        {activeTab === 'catalog' && (
+          <HeroBanner
+            onSelectShop={(shop) => {
+              setSelectedShop(shop);
+              setSelectedCategory('all');
+              setActiveTab('catalog');
+            }}
+            onOpenAdmin={() => setIsAdminPortalOpen(true)}
+          />
+        )}
+
+        {/* Main Section Navigation Bar - hidden on account view for pure profile focus */}
+        {activeTab !== 'account' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-1">
+            <div className="bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-1.5 rounded-2xl shadow-xs inline-flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => setActiveTab('catalog')}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                  activeTab === 'catalog'
+                    ? 'bg-amber-600 text-white shadow-md'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Store className="w-4 h-4" />
+                <span>Product Catalog</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('stores')}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                  activeTab === 'stores'
+                    ? 'bg-amber-600 text-white shadow-md'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <MapPin className="w-4 h-4" />
+                <span>Showroom Locations</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Content View Switcher */}
         {activeTab === 'stores' ? (
           <StoreLocationsSection />
+        ) : activeTab === 'account' ? (
+          <AccountTab
+            currentUser={currentUser}
+            onUserLogin={handleUserLogin}
+            onUserLogout={handleUserLogout}
+            onOpenWishlist={() => {
+              setWishlistModalTab('wishlist');
+              setIsWishlistModalOpen(true);
+            }}
+            onOpenHistory={() => {
+              setWishlistModalTab('history');
+              setIsWishlistModalOpen(true);
+            }}
+            onBackToCatalog={() => setActiveTab('catalog')}
+          />
         ) : (
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-5">
             
@@ -397,15 +577,21 @@ export default function App() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedProducts.map((product) => {
                   const isInCart = quoteItems.some((item) => item.product.id === product.id);
+                  const isCompared = compareProducts.some((p) => p.id === product.id);
+                  const isWishlisted = wishlistProducts.some((p) => p.id === product.id);
                   return (
                     <ProductCard
                       key={product.id}
                       product={product}
-                      onQuickView={(p) => setSelectedProductModal(p)}
+                      onQuickView={handleOpenProductDetail}
                       onAddToQuote={handleAddToQuote}
                       isInQuoteCart={isInCart}
                       isAdminLoggedIn={isAdminLoggedIn}
                       onEditProduct={() => setIsAdminPortalOpen(true)}
+                      isCompared={isCompared}
+                      onToggleCompare={handleToggleCompare}
+                      isWishlisted={isWishlisted}
+                      onToggleWishlist={handleToggleWishlist}
                     />
                   );
                 })}
@@ -426,7 +612,53 @@ export default function App() {
         onOpenAdmin={() => setIsAdminPortalOpen(true)}
       />
 
+      {/* Floating Compare Tray Bar */}
+      {compareProducts.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 text-white backdrop-blur-xl border border-amber-500/40 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 sm:gap-6 animate-slide-up max-w-[92vw]">
+          <div className="flex items-center gap-2">
+            <Scale className="w-5 h-5 text-amber-400 shrink-0" />
+            <span className="text-xs sm:text-sm font-bold whitespace-nowrap">
+              {compareProducts.length} Product{compareProducts.length > 1 ? 's' : ''} Selected
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsCompareOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer whitespace-nowrap"
+            >
+              Compare Now
+            </button>
+            <button
+              onClick={handleClearCompare}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+              title="Clear compare tray"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modals & Drawers */}
+      <RoomCalculatorModal
+        isOpen={isCalculatorOpen}
+        onClose={() => setIsCalculatorOpen(false)}
+        products={products}
+        onAddToQuote={handleAddToQuote}
+        quoteCartIds={quoteItems.map((item) => item.product.id)}
+      />
+
+      <CompareModal
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        compareProducts={compareProducts}
+        onRemoveFromCompare={handleRemoveFromCompare}
+        onClearCompare={handleClearCompare}
+        onAddToQuote={handleAddToQuote}
+        quoteCartIds={quoteItems.map((item) => item.product.id)}
+      />
+
       <ProductDetailModal
         product={selectedProductModal}
         onClose={() => setSelectedProductModal(null)}
@@ -436,6 +668,48 @@ export default function App() {
             ? quoteItems.some((item) => item.product.id === selectedProductModal.id)
             : false
         }
+        isWishlisted={
+          selectedProductModal
+            ? wishlistProducts.some((p) => p.id === selectedProductModal.id)
+            : false
+        }
+        onToggleWishlist={handleToggleWishlist}
+      />
+
+      <WishlistAndHistoryModal
+        isOpen={isWishlistModalOpen}
+        onClose={() => setIsWishlistModalOpen(false)}
+        activeTab={wishlistModalTab}
+        setActiveTab={setWishlistModalTab}
+        wishlistProducts={wishlistProducts}
+        onToggleWishlist={handleToggleWishlist}
+        onClearWishlist={handleClearWishlist}
+        recentlyViewedProducts={recentlyViewedProducts}
+        onClearHistory={handleClearHistory}
+        onQuickView={handleOpenProductDetail}
+        onAddToQuote={handleAddToQuote}
+        quoteCartIds={quoteItems.map((item) => item.product.id)}
+        currentUser={currentUser}
+        onOpenAuthModal={() => {
+          setIsWishlistModalOpen(false);
+          setIsAuthModalOpen(true);
+        }}
+      />
+
+      <UserAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onUserLogin={handleUserLogin}
+        onUserLogout={handleUserLogout}
+        onOpenWishlist={() => {
+          setWishlistModalTab('wishlist');
+          setIsWishlistModalOpen(true);
+        }}
+        onOpenHistory={() => {
+          setWishlistModalTab('history');
+          setIsWishlistModalOpen(true);
+        }}
       />
 
       <QuoteCartDrawer
