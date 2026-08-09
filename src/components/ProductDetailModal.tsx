@@ -22,7 +22,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       ? 'https://maps.app.goo.gl/oX5BepWoruLiGGxa6'
       : 'https://maps.app.goo.gl/ie2eCof9c5GmTpdaA';
 
-  const storePhone = product.shopOrigin === 'lighthouse' ? '919876543210' : '919876543211';
+  const storePhone = '918088874239';
 
   const hasDiscount = product.discountPrice && product.discountPrice < product.originalPrice;
   const savings = hasDiscount ? product.originalPrice - product.discountPrice! : 0;

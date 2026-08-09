@@ -75,7 +75,7 @@ export const QuoteCartDrawer: React.FC<QuoteCartDrawerProps> = ({
     }
     text += `*Estimated Total Net:* ₹${totalNetPrice.toLocaleString('en-IN')}\n`;
 
-    const targetPhone = preferredStore === 'electrical_shop' ? '919876543211' : '919876543210';
+    const targetPhone = '918088874239';
     window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`, '_blank');
 
     setSubmitted(true);
