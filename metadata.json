@@ -1,0 +1,6 @@
+{
+  "name": "Lighthouse & Electrical Shop Portfolio",
+  "description": "Showcase portfolio for Lighthouse and Electrical Shop featuring categorized lighting solutions, major electrical appliances, discounted prices, store locations, and full admin portal management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
