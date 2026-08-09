@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Lightbulb, Zap, ShoppingBag, MessageCircle, MapPin, CheckCircle, ShieldCheck, Tag } from 'lucide-react';
+import { X, Lightbulb, Zap, ShoppingBag, MessageCircle, MapPin, CheckCircle, Tag, Share2 } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductDetailModalProps {
@@ -38,6 +38,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     ).toLocaleString('en-IN')}\nPlease share availability and delivery options.`;
 
     window.open(`https://wa.me/${storePhone}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleShareOnWhatsApp = () => {
+    const specsText = product.specifications && product.specifications.length > 0
+      ? product.specifications.map(s => `• ${s.label}: ${s.value}`).join('\n')
+      : '';
+
+    const text = `Check out this product from *${product.shopOrigin === 'lighthouse' ? 'Light House' : 'Electrical Shop'}*!\n\n` +
+      `*${product.title}*\n` +
+      `• *Brand:* ${product.brand}\n` +
+      `• *Category:* ${product.category}\n` +
+      `• *Price:* ₹${(product.discountPrice || product.originalPrice).toLocaleString('en-IN')}${hasDiscount ? ` (MRP ₹${product.originalPrice.toLocaleString('en-IN')})` : ''}\n\n` +
+      `*Description:*\n${product.description}\n` +
+      (specsText ? `\n*Specifications:*\n${specsText}\n` : '') +
+      `\nFor inquiries or orders, contact: 8088874239`;
+
+    window.open(`https://wa.me/918088874239?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
@@ -173,13 +190,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <span>{isInQuoteCart ? 'In Your Quote Request List' : 'Add to Quote Request'}</span>
               </button>
 
-              <button
-                onClick={handleWhatsAppInquiry}
-                className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-2 transition-all shadow-lg"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Direct WhatsApp Inquiry</span>
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  onClick={handleWhatsAppInquiry}
+                  className="w-full py-3 px-3 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Direct WhatsApp Inquiry</span>
+                </button>
+
+                <button
+                  onClick={handleShareOnWhatsApp}
+                  className="w-full py-3 px-3 rounded-xl font-bold text-xs sm:text-sm bg-teal-700 hover:bg-teal-600 text-white flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Share on WhatsApp</span>
+                </button>
+              </div>
             </div>
 
           </div>
